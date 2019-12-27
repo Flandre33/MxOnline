@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'organization',
     'xadmin',
     'crispy_forms',
+    'captcha',
+    'pure_pagination',
+
 ]
 
 AUTH_USER_MODEL = 'users.UserProfile'
@@ -64,7 +67,7 @@ ROOT_URLCONF = 'MxOnline.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR + '/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -72,6 +75,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                #添加图片处理器，为了在课程列表中前面加上MEDIA_URL
+                'django.template.context_processors.media',
             ],
         },
     },
@@ -138,3 +143,25 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
+
+AUTHENTICATION_BACKENDS = (
+    'users.views.CustomBackend',
+)
+
+# 设置邮箱
+EMAIL_HOST = 'smtp.qq.com'
+EMAIL_POST = 25
+EMAIL_HOST_USER = '337119697@qq.com'
+EMAIL_HOST_PASSWORD = 'emuqufhhfavfbiac'
+EMAIL_USE_TLS = True
+EMAIL_FROM = '337119697@qq.com'
+DEFAULT_FROM_EMAIL = '337119697@qq.com'
+
+# 设置上传文件的路径
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR,'media')   #指定根目录
+
