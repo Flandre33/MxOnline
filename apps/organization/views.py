@@ -100,6 +100,10 @@ class OrgHomeView(View):
         # 反向查询到课程机构的所有课程和老师
         all_courses = course_org.course_set.all()[:4]
         all_teacher = course_org.teacher_set.all()[:2]
+
+        course_org.click_nums += 1
+        course_org.save()
+
         return render(request,'org-detail-homepage.html',{
             'course_org': course_org,
             'all_courses': all_courses,
@@ -255,6 +259,9 @@ class TeacherDetailView(View):
         has_org_faved = False
         if UserFavorite.objects.filter(user=request.user, fav_type=2, fav_id=teacher.org.id):
             has_org_faved = True
+
+        teacher.click_nums += 1
+        teacher.save()
 
         # 讲师排行榜
         sorted_teacher = Teacher.objects.all().order_by('-click_nums')[:3]

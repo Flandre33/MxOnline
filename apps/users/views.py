@@ -1,5 +1,5 @@
 import json
-from django.shortcuts import render
+from django.shortcuts import render, reverse, render_to_response
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse, HttpResponseRedirect
 
@@ -7,11 +7,14 @@ from django.contrib.auth.backends import ModelBackend
 from django.db.models import Q
 from django.views.generic.base import View
 from .forms import UserInfoForm, LoginForm, RegisterForm, ForgetPwdForm, ModifyPwdForm, UploadImageForm
-from .models import UserProfile, EmailVerifyRecord
-from operation.models import UserCourse
+from .models import UserProfile, EmailVerifyRecord, Banner
+from course.models import CourseOrg, Teacher,Course
+from operation.models import UserCourse, UserFavorite, UserMessage
 from django.contrib.auth.hashers import make_password
 from utils.email_send import send_register_email
 from utils.mixin_utils import LoginRequiredMixin
+from pure_pagination import Paginator, EmptyPage, PageNotAnInteger
+
 
 
 
@@ -56,7 +59,7 @@ class LoginView(View):
     def get(self, request):
         return render(request, 'login.html')
 
-    def post(self, request):
+    def post(self,request):
         # 实例化
         login_form = LoginForm(request.POST)
         if login_form.is_valid():
@@ -67,17 +70,19 @@ class LoginView(View):
             user = authenticate(username=user_name, password=pass_word)
             # 如果不是null说明验证成功
             if user is not None:
-                # 登录
-                login(request, user)
-                return render(request, 'index.html')
+                if user.is_active:
+                    # 只有注册激活才能登录
+                    login(request, user)
+                    return HttpResponseRedirect(reverse('index'))
+                else:
+                    return render(request, 'login.html', {'msg': '用户名或密码错误', 'login_form': login_form})
             # 只有当用户名或密码不存在时，才返回错误信息到前端
             else:
-                return render(request, 'login.html', {'msg': '用户名或密码错误', 'login_form': login_form})
+                return render(request, 'login.html', {'msg': '用户名或密码错误','login_form':login_form})
 
         # form.is_valid（）已经判断不合法了，所以这里不需要再返回错误信息到前端了
         else:
-            return render(request, 'login.html', {'login_form': login_form})
-
+            return render(request,'login.html',{'login_form':login_form})
 
 class RegisterView(View):
     """
@@ -242,10 +247,111 @@ class MyCourseView(LoginRequiredMixin, View):
         })
 
 
+class MyFavOrgView(LoginRequiredMixin,View):
+    '''我收藏的课程机构'''
+    def get(self, request):
+        org_list = []
+        fav_orgs = UserFavorite.objects.filter(user=request.user, fav_type=2)
+        # 上面的fav_orgs只是存放了id，我们还需要通过id找到机构对象
+        for fav_org in fav_orgs:
+            # 取出机构的id
+            org_id = fav_org.fav_id
+            # 获取机构对象
+            org = CourseOrg.objects.get(id=org_id)
+            org_list.append(org)
+        return render(request, "usercenter-fav-org.html", {
+            "org_list": org_list,
+        })
+
+
+class MyFavTeacherView(LoginRequiredMixin, View):
+    '''我收藏的授课老师'''
+    def get(self, request):
+        teacher_list = []
+        fav_teachers = UserFavorite.objects.filter(user=request.user, fav_type=3)
+        for fav_teacher in fav_teachers:
+            teacher_id = fav_teacher.fav_id
+            teacher = Teacher.objects.get(id=teacher_id)
+            teacher_list.append(teacher)
+        return render(request, "usercenter-fav-teacher.html", {
+            "teacher_list": teacher_list,
+        })
+
+
+class MyFavCourseView(LoginRequiredMixin,View):
+    """
+    我收藏的课程
+    """
+    def get(self, request):
+        course_list = []
+        fav_courses = UserFavorite.objects.filter(user=request.user, fav_type=1)
+        for fav_course in fav_courses:
+            course_id = fav_course.fav_id
+            course = Course.objects.get(id=course_id)
+            course_list.append(course)
+
+        return render(request, 'usercenter-fav-course.html', {
+            "course_list":course_list,
+        })
+
+
+class MyMessageView(LoginRequiredMixin, View):
+    '''我的消息'''
+
+    def get(self, request):
+        all_message = UserMessage.objects.filter(user= request.user.id)
+
+        try:
+            page = request.GET.get('page', 1)
+        except PageNotAnInteger:
+            page = 1
+        p = Paginator(all_message, 4,request=request)
+        messages = p.page(page)
+        return  render(request, "usercenter-message.html", {
+        "messages":messages,
+        })
+
+
 class LogoutView(View):
     '''用户登出'''
     def get(self,request):
         logout(request)
         from django.urls import reverse
         return HttpResponseRedirect(reverse('index'))
+
+
+class IndexView(View):
+    '''首页'''
+    def get(self, request):
+        # 轮播图
+        all_banners = Banner.objects.all().order_by('index')
+        # 课程
+        courses = Course.objects.filter(is_banner=False)[:6]
+        # 轮播课程
+        banner_courses = Course.objects.filter(is_banner=True)[:3]
+        # 课程机构
+        course_orgs = Course.objects.filter(is_banner=True)[:3]
+
+        return render(request, 'index.html', {
+            'all_banners': all_banners,
+            'courses': courses,
+            'banner_courses': banner_courses,
+            'course_orgs': course_orgs,
+        })
+
+
+def pag_not_found(request):
+    # 全局404处理函数
+    response = render_to_response('404.html', {})
+    response.status_code = 404
+    return response
+
+
+def page_error(request):
+    # 全局500处理函数
+    response = render_to_response('500.html', {})
+    response.status_code = 500
+    return response
+
+
 

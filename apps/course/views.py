@@ -101,6 +101,9 @@ class CourseInfoView(LoginRequiredMixin, View):
         # 通过所有课程的id,找到所有的课程，按点击量去五个
         relate_courses = Course.objects.filter(id__in=course_ids).order_by("-click_nums")[:5]
 
+        course.students += 1
+        course.save()
+
         # 资源
         all_resources = CourseResource.objects.filter(course=course)
         return render(request,'course-video.html',{
@@ -183,3 +186,7 @@ class VideoPlayView(LoginRequiredMixin, View):
             'relate_courses':relate_courses,
             'video':video,
         })
+
+
+
+

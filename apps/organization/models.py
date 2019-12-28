@@ -56,6 +56,9 @@ class Teacher(models.Model):
     image = models.ImageField(default='', upload_to="teacher/%Y/%m", verbose_name="头像", max_length=100)
     teacher_age = models.IntegerField('年龄', default=25)
 
+    def get_course_nums(self):
+        return self.course_set.all().count()
+
     class Meta:
         verbose_name = '教师'
         verbose_name_plural = verbose_name

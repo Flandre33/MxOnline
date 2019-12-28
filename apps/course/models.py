@@ -28,7 +28,7 @@ class Course(models.Model):
     teacher = models.ForeignKey(Teacher, verbose_name='讲师', null=True, blank=True, on_delete=models.CASCADE)
     youneed_know = models.CharField('课程须知', max_length=300, default='')
     teacher_tell = models.CharField('老师告诉你', max_length=300, default='')
-
+    is_banner = models.BooleanField('是否轮播', default=False)
     class Meta:
         verbose_name = "课程"
         verbose_name_plural = verbose_name
@@ -88,4 +88,12 @@ class CourseResource(models.Model):
         verbose_name = "课程资源"
         verbose_name_plural = verbose_name
 
+
+class BannerCourse(Course):
+    '''显示轮播课程'''
+    class Meta:
+        verbose_name = '轮播课程'
+        verbose_name_plural = verbose_name
+        # 这里必须设置proxy=True，这样就不会再生成一张表，同时还具有Model的功能
+        proxy = True
 

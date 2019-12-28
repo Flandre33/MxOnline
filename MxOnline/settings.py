@@ -27,7 +27,7 @@ SECRET_KEY = 'gvq4*!btby+75v_o1_buq4ggk=)5lxapznsv=lz9bk0(jyq)&#'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -165,3 +165,6 @@ DEFAULT_FROM_EMAIL = '337119697@qq.com'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')   #指定根目录
 
+
+# 静态文件
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
